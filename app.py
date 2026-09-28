@@ -478,122 +478,15 @@ if len(district_view) > 0:
 else:
 
     st.warning("No district data available.")
-
-
-# ============================================================
-# STATION EVALUATION
-# ============================================================
-
-st.header("📍 4. DWLR Station Evaluation")
-
-
-if selected_station != "All Stations":
-
-    if len(filtered_evaluation) > 0:
-
-        row = filtered_evaluation.iloc[0]
-
-
-        c1, c2, c3, c4 = st.columns(4)
-
-
-        with c1:
-
-            st.metric(
-                "Average",
-                f"{row['Average_Groundwater']:.3f}"
-            )
-
-
-        with c2:
-
-            st.metric(
-                "Minimum",
-                f"{row['Minimum_Groundwater']:.3f}"
-            )
-
-
-        with c3:
-
-            st.metric(
-                "Maximum",
-                f"{row['Maximum_Groundwater']:.3f}"
-            )
-
-
-        with c4:
-
-            st.metric(
-                "Trend",
-                str(row["Trend_Direction"])
-            )
-
-
-        st.write(
-            "**Trend slope:**",
-            round(float(row["Trend_Slope"]), 5)
-            if not pd.isna(row["Trend_Slope"])
-            else "N/A"
-        )
-
-
-        st.write(
-            "**Observed range:**",
-            round(float(row["Range"]), 3)
-            if not pd.isna(row["Range"])
-            else "N/A"
-        )
-
-
-    station_trend = station_monthly[
-        (station_monthly["State"] == selected_state)
-        & (station_monthly["District"] == selected_district)
-        & (station_monthly["Station"] == selected_station)
-    ].copy()
-
-
-    if len(station_trend) > 0:
-
-        station_trend["Month"] = (
-            station_trend["Month"].astype(str)
-        )
-
-        station_trend = station_trend.sort_values("Month")
-
-
-        fig_station = px.line(
-            station_trend,
-            x="Month",
-            y="Average_Groundwater",
-            markers=True,
-            title=f"Monthly Trend — {selected_station}"
-        )
-
-
-        st.plotly_chart(
-            fig_station,
-            use_container_width=True
-        )
-
-
-else:
-
-    st.info(
-        "Select a specific DWLR station from the sidebar "
-        "to see detailed station evaluation."
-    )
-
-
 # ============================================================
 # SPATIAL EVALUATION
 # ============================================================
 
 st.header("🗺️ 5. Spatial Evaluation of DWLR Stations")
 
-
 map_data = filtered_station.copy()
 
-
+# Convert coordinates to numeric
 map_data["Latitude"] = pd.to_numeric(
     map_data["Latitude"],
     errors="coerce"
@@ -604,46 +497,65 @@ map_data["Longitude"] = pd.to_numeric(
     errors="coerce"
 )
 
-
+# Remove invalid coordinates
 map_data = map_data.dropna(
     subset=["Latitude", "Longitude"]
 )
 
+# Keep only realistic geographic coordinates
+map_data = map_data[
+    (map_data["Latitude"] >= -90)
+    & (map_data["Latitude"] <= 90)
+    & (map_data["Longitude"] >= -180)
+    & (map_data["Longitude"] <= 180)
+]
 
 if len(map_data) > 0:
 
-    fig_map = px.scatter_mapbox(
-        map_data,
-        lat="Latitude",
-        lon="Longitude",
-        hover_name="Station",
-        hover_data=[
-            "State",
-            "District",
-            "Average_Groundwater",
-            "Minimum_Groundwater",
-            "Maximum_Groundwater"
-        ],
-        zoom=4,
-        height=600
+    # Create a simple station map
+    st.map(
+        map_data[
+            ["Latitude", "Longitude"]
+        ]
     )
 
-    fig_map.update_layout(
-        mapbox_style="open-street-map"
+    st.success(
+        f"🗺️ {len(map_data)} DWLR station location(s) "
+        "available on the map."
     )
 
-    st.plotly_chart(
-        fig_map,
-        use_container_width=True
+    # Station location details
+    st.subheader("📍 Station Location Details")
+
+    location_columns = [
+        "State",
+        "District",
+        "Station",
+        "Latitude",
+        "Longitude",
+        "Average_Groundwater"
+    ]
+
+    location_columns = [
+        col
+        for col in location_columns
+        if col in map_data.columns
+    ]
+
+    st.dataframe(
+        map_data[
+            location_columns
+        ].round(4),
+        use_container_width=True,
+        hide_index=True
     )
 
 else:
 
     st.warning(
-        "No valid latitude/longitude values available "
-        "for the selected filters."
+        "⚠️ No valid latitude/longitude values are "
+        "available for the selected filters."
     )
-
 
 # ============================================================
 # EVALUATION SUMMARY
