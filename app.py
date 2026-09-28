@@ -30,19 +30,19 @@ st.caption(
 def load_data():
 
     district = pd.read_csv(
-        "dashboard_data/district_dashboard.csv"
+        "district_dashboard.csv"
     )
 
     station = pd.read_csv(
-        "dashboard_data/station_dashboard.csv"
+        "station_dashboard.csv"
     )
 
     monthly = pd.read_csv(
-        "dashboard_data/monthly_dashboard.csv"
+        "monthly_dashboard.csv"
     )
 
     station_monthly = pd.read_csv(
-        "dashboard_data/station_monthly_dashboard.csv"
+        "station_monthly_dashboard.csv"
     )
 
     return district, station, monthly, station_monthly
